@@ -1,9 +1,20 @@
 #include <iostream>
 #include <ctype.h>  //isdigit(), tolower()
+#include <regex>
 #include "battleship.h"
+#include "nlohmann/json.hpp"
 
+using json = lohmann:json;
 using namespace std;
 
+class TurnInfo {
+	public:
+		string player;
+		string enemy;
+		board* ships;  
+		board* guesses;
+		unordered_map<string, int>* enemyShipStatus;
+};
 
 // a mapping of the first letter of ship names to full ship names
 const unordered_map<char, string> battleship::symbolToShip = {
@@ -17,9 +28,11 @@ const unordered_map<char, string> battleship::symbolToShip = {
 
 // battleship constructor
 battleship::battleship() {
-	getPlayerNames();
+	// getPlayerNames();
 	isGameOver = false;
 	isP1Turn = true;
+	p1 = 'Player 1';
+	p2 = 'Player 2';
 
 	p1ShipStatus = {
 		{"carrier", 5},
@@ -107,19 +120,22 @@ pair <int, int> battleship::getCoordinates() {
 }
 
 
-// prompts user for player names and saves them
-void battleship::getPlayerNames() {
-	cout << "Enter player1 name: " << endl;
-	getline(cin, p1);
-	cout << "Enter player2 name: " << endl;
-	getline(cin, p2);
-	cout << endl;
-}
+// // prompts user for player names and saves them
+// void battleship::getPlayerNames() {
+// 	cout << "Enter player1 name: " << endl; 
+// 	getline(cin, p1);
+// 	cout << "Enter player2 name: " << endl;
+// 	getline(cin, p2);
+// 	cout << endl;
+// }
 
 
 // prompts player to place their ships and updates board accordingly
 void battleship::placeShips() {
 	board* ships;
+	std::regex pattern("[a-j][0-9]\\s[a-j][0-9]");
+	
+	// handle this with client thread switching?
 	if (isP1Turn) {
 		cout << p1 << "'s turn (make sure " << p2 << " can't see now)" << endl;
 		ships = &p1Ships;
@@ -130,14 +146,21 @@ void battleship::placeShips() {
 	}
 
 	for (auto iter : p1ShipStatus) {
+		// socket.Write(printBoard(), line 139)
 		ships->printBoard();
 		cout << "Place " << iter.first << " (size " << iter.second << ")\n" << endl;
 
+		// socket.Read() -> should be look like "a0 a1"
+		// while pattern == socket.read
 		while (true) {
-			cout << "(start coordinate) ";
+			cout << "(start coordinate) ";  // delete this line
+			// first part of s.read
 			pair<int, int> start = getCoordinates();
-			cout << "(end coordinate) ";
+			cout << "(end coordinate) ";  // delete this line
+			// second part of s.read
 			pair<int, int> end = getCoordinates();
+
+			
 			if (ships->placeShip(start.first, start.second, end.first, end.second, iter.second, iter.first[0]))
 				break;
 		}
@@ -173,17 +196,21 @@ void battleship::gameStep() {
 		enemyShipStatus = &p1ShipStatus;
 	}
 
+	// socket.Write(turnInfo)
 	printTurnInfo(player, enemy, ships, guesses, enemyShipStatus);
 	cout << "\n\n(Choose coordinate to fire at) ";
 	while (true) {
+		// socket.Read()
 		pair<int, int> coord = getCoordinates();
 		if (fireAtCoordinates(coord.first, coord.second, player, enemy, guesses, enemyShips, enemyShipStatus))
 			break;
 	}
 
+
 	if (isGameOver)
 		return;
 
+	// change state to P2(1)
 	string response;
 	cout << "Press enter to hide your board before " << enemy << "'s turn" << endl;
 	getline(cin, response);
@@ -196,8 +223,19 @@ void battleship::gameStep() {
 void battleship::printTurnInfo(string player, string enemy, board* ships,  board* guesses,
 		unordered_map<string, int>* enemyShipStatus) {
 	string response;
+	// Create obj with the params
+	TurnInfo currentTurn;
+
+	
+	// socket.Write(currentTurn)
+	
+	
+	
+	
+	
 	cout << player << "'s turn" << endl;
 	cout << "Press enter to see your board and guesses (make sure " << enemy << " can't see now)" << endl;
+
 	getline(cin, response);
 	cout << "Here's the status of your ships so far" << endl;
 	ships->printBoard();
