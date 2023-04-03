@@ -15,6 +15,9 @@ class TurnInfo {
 		board* ships;  
 		board* guesses;
 		unordered_map<string, int>* enemyShipStatus;
+
+	TurnInfo(string p, string e, board* s, board* g, unordered_map<string, int>* ess) : player(p), enemy(e), ships(s), guesses(g), enemyShipStatus(ess)
+	{}
 };
 
 // a mapping of the first letter of ship names to full ship names
@@ -225,11 +228,16 @@ void battleship::printTurnInfo(string player, string enemy, board* ships,  board
 		unordered_map<string, int>* enemyShipStatus) {
 	string response;
 	// Create obj with the params
-	TurnInfo currentTurn;
+	TurnInfo currentTurn(player, enemy, ships, guesses, enemyShipStatus);
 
-	
+	// make all non-strings strings (2 boards, 1 hm)
+
+
 	// socket.Write(currentTurn)
-	
+	json j = {
+		{"player", player},
+		{"enemy", enemy}
+	};
 	
 	
 	
