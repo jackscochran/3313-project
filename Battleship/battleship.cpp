@@ -3,11 +3,14 @@
 #include <regex>
 #include "battleship.h"
 #include <fstream>
-#include <nlohmann/json.hpp>
+#include <string>
+#include <vector>
+#include <random>
 
-using json = nlohmann::json;
 using namespace std;
 
+
+// CLASS THAT DEFINES THE OBJECT TO SEND TO CLIENT WHEN IT IS THEIR TURN.
 class TurnInfo {
 	public:
 		string player;
@@ -20,7 +23,7 @@ class TurnInfo {
 	{}
 };
 
-// a mapping of the first letter of ship names to full ship names
+// HASH MAP OF SHIPS AND THEIR DESIGNATIONS (ABBRV.)
 const unordered_map<char, string> battleship::symbolToShip = {
 	{'c', "carrier"},
 	{'b', "battleship"},
@@ -30,13 +33,13 @@ const unordered_map<char, string> battleship::symbolToShip = {
 };
 
 
-// battleship constructor
+// CONSTRUCTOR OF BATTLESHIP GAME
 battleship::battleship() {
 	// getPlayerNames();
 	isGameOver = false;
 	isP1Turn = true;
-	p1 = 'Player 1';
-	p2 = 'Player 2';
+	p1 = "Player One";
+	p2 = "Player Two";
 
 	p1ShipStatus = {
 		{"carrier", 5},
@@ -54,9 +57,11 @@ battleship::battleship() {
 		{"patrol boat", 2}
 	};
 
-	placeShips();  // placing p1 ships
-	placeShips();  // placing p2 ships
+	placeShips();  // placing p1 ships SHOULD BE hardcoded NOW
+	placeShips();  // placing p2 ships SHOULD BE hardcoded NOW
 }
+
+
 
 
 // clears std::cout when switching turns to prevent seeing opponent's board
@@ -65,6 +70,18 @@ void battleship::flushCout(int numLines) {
 		cout << endl;
 }
 
+void battleship::placeShips() {
+	board* ships;
+	if (isP1Turn) {
+		ships = &p1Ships;
+	}
+	else {
+		ships = &p2Ships;
+	}
+	ships->autoPlaceShips();
+	isP1Turn = !isP1Turn;
+	// flushCout();
+}
 
 // returns (-1, -1) if invalid input else (row, col) of coordinate input
 pair<int, int> battleship::parseCoordinatesInput(string input) {
@@ -106,8 +123,12 @@ pair<int, int> battleship::parseCoordinatesInput(string input) {
 pair <int, int> battleship::getCoordinates() {
 	string response;
 	cout << "Enter coordinates such as A3: " << endl;
+	
 	while (true) {
+		//
 		getline(cin, response);
+		// CHANGE THIS TO A SOCKET WRITE AND READ
+		//
 		pair<int, int> coord = parseCoordinatesInput(response);
 		if (coord.first == -1)
 			continue;  // invalid input, repeat
@@ -124,56 +145,7 @@ pair <int, int> battleship::getCoordinates() {
 }
 
 
-// // prompts user for player names and saves them
-// void battleship::getPlayerNames() {
-// 	cout << "Enter player1 name: " << endl; 
-// 	getline(cin, p1);
-// 	cout << "Enter player2 name: " << endl;
-// 	getline(cin, p2);
-// 	cout << endl;
-// }
-
-
-// prompts player to place their ships and updates board accordingly
-void battleship::placeShips() {
-	board* ships;
-	std::regex pattern("[a-j][0-9]\\s[a-j][0-9]");
-	
-	// handle this with client thread switching?
-	if (isP1Turn) {
-		cout << p1 << "'s turn (make sure " << p2 << " can't see now)" << endl;
-		ships = &p1Ships;
-	}
-	else {
-		cout << p2 << "'s turn (make sure " << p1 << " can't see now)" << endl;
-		ships = &p2Ships;
-	}
-
-	for (auto iter : p1ShipStatus) {
-		// socket.Write(printBoard(), line 139)
-		ships->printBoard();
-		cout << "Place " << iter.first << " (size " << iter.second << ")\n" << endl;
-
-		// socket.Read() -> should be look like "a0 a1"
-		// while pattern == socket.read
-		while (true) {
-			cout << "(start coordinate) ";  // delete this line
-			// first part of s.read
-			pair<int, int> start = getCoordinates();
-			cout << "(end coordinate) ";  // delete this line
-			// second part of s.read
-			pair<int, int> end = getCoordinates();
-
-			
-			if (ships->placeShip(start.first, start.second, end.first, end.second, iter.second, iter.first[0]))
-				break;
-		}
-	}
-	isP1Turn = !isP1Turn;
-	flushCout();
-}
-
-
+// CALLED OVER AND OVER AGAIN UNTIL GAME IS OVER
 // execution of a player move (one iteration of game)
 void battleship::gameStep() {
 	string player;
@@ -214,12 +186,12 @@ void battleship::gameStep() {
 	if (isGameOver)
 		return;
 
-	// change state to P2(1)
-	string response;
-	cout << "Press enter to hide your board before " << enemy << "'s turn" << endl;
-	getline(cin, response);
-	flushCout();
-	isP1Turn = !isP1Turn;
+	
+	// string response;
+	// cout << "Press enter to hide your board before " << enemy << "'s turn" << endl;
+	// getline(cin, response);
+	// flushCout();
+	isP1Turn = !isP1Turn;  // change state to P2(1)
 }
 
 
@@ -234,10 +206,10 @@ void battleship::printTurnInfo(string player, string enemy, board* ships,  board
 
 
 	// socket.Write(currentTurn)
-	json j = {
-		{"player", player},
-		{"enemy", enemy}
-	};
+	// json j = {
+	// 	{"player", player},
+	// 	{"enemy", enemy}
+	// };
 	
 	
 	
@@ -261,28 +233,28 @@ bool battleship::fireAtCoordinates(int y, int x, string player, string enemy, bo
 		board* enemyShips, unordered_map<string, int>* enemyShipStatus) {
 
 	// case - already hit
-	if (guesses->grid[y][x] == 'x') {
+	if (guesses->hardcodedGrid[y][x] == 'x') {
 		cout << "Already hit there! Choose again" << endl;
 		return false;
 	}
 	// case - already miss
-	else if (guesses->grid[y][x] == 'o') {
+	else if (guesses->hardcodedGrid[y][x] == 'o') {
 		cout << "Already missed there! Choose again" << endl;
 		return false;
 	}
 	// case - new miss
-	else if (enemyShips->grid[y][x] == '-') {
-		guesses->grid[y][x] = 'o';
-		enemyShips->grid[y][x] = 'o';
+	else if (enemyShips->hardcodedGrid[y][x] == '-') {
+		guesses->hardcodedGrid[y][x] = 'o';
+		enemyShips->hardcodedGrid[y][x] = 'o';
 		cout << "Miss!" << endl;
 		return true;
 	}
 	// case - new hit
 	else {
-		char shipSymbol = enemyShips->grid[y][x];
+		char shipSymbol = enemyShips->hardcodedGrid[y][x];
 		string shipHit = symbolToShip.at(shipSymbol);
-		guesses->grid[y][x] = 'x';
-		enemyShips->grid[y][x] = 'x';
+		guesses->hardcodedGrid[y][x] = 'x';
+		enemyShips->hardcodedGrid[y][x] = 'x';
 		cout << "Hit! " << shipHit << "!" << endl;
 		enemyShipStatus->operator[](shipHit)--;
 

@@ -4,7 +4,7 @@
 
 using namespace std;
 
-
+// THIS WILL BE SUBSTITUTED WITH A GAME THREAD
 int main() {
 	cout << "Play battleship? (y/n)" << endl;
 	string response;
@@ -14,6 +14,7 @@ int main() {
 		return 0;
 	}
 
+	// CALLS THE CAME TO START
 	battleship game;
 	while (!game.isGameOver)
 		game.gameStep();

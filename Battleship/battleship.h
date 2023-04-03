@@ -33,7 +33,10 @@ class battleship {
 		static void flushCout(int numLines = 50);
 		static pair<int, int> parseCoordinatesInput(string input);
 		static pair<int, int> getCoordinates();
-		void getPlayerNames();
+		// static tuple<pair <int, int>, pair <int, int>> getCoordinates(int size);
+		// static string getRandomCoordinates();
+		// static string getRandomCoordinates(pair<int, int> coord, int size);
+		// void getPlayerNames();
 		void placeShips();
 		void gameStep();
 		void printTurnInfo(string player, string enemy, board* ships,  board* guesses,
