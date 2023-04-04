@@ -1,6 +1,8 @@
 #ifndef BOARD_H_
 #define BOARD_H_
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 const int BOARDSIZE = 10;
 
