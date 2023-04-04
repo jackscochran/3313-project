@@ -1,6 +1,8 @@
 #include <iostream>
 #include "board.h"
+#include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
 using namespace std;
 
 
@@ -46,6 +48,18 @@ void board::autoPlaceShips() {
     hardcodedGrid[8][6] = 'c';
     hardcodedGrid[8][7] = 'c';
 }
+
+json board::boardToJSON() {
+    json grid = json::array();
+    for (int i = 0; i < BOARDSIZE; i++) {
+        grid.push_back(json::array());
+        for(int j = 0; j < BOARDSIZE; j++) {
+            grid[i].push_back(hardcodedGrid[i][j]);
+        }
+    }
+    return grid;
+}
+
 // // returns true if ship was successfully placed at given coordinates, false otherwise
 // bool board::placeShip(int y1, int x1, int y2, int x2, int shipSize, char shipSymbol) {
 // 	int start;

@@ -6,22 +6,23 @@
 #include <string>
 #include <vector>
 #include <random>
+#include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
 using namespace std;
 
 
 // CLASS THAT DEFINES THE OBJECT TO SEND TO CLIENT WHEN IT IS THEIR TURN.
-class TurnInfo {
-	public:
-		string player;
-		string enemy;
-		board* ships;  
-		board* guesses;
-		unordered_map<string, int>* enemyShipStatus;
-
-	TurnInfo(string p, string e, board* s, board* g, unordered_map<string, int>* ess) : player(p), enemy(e), ships(s), guesses(g), enemyShipStatus(ess)
-	{}
-};
+// class TurnInfo {
+// 	public:
+// 		string player;
+// 		string enemy;
+// 		board* ships;  
+// 		board* guesses;
+// 		unordered_map<string, int>* enemyShipStatus;
+// 	TurnInfo(string p, string e, board* s, board* g, unordered_map<string, int>* ess) : player(p), enemy(e), ships(s), guesses(g), enemyShipStatus(ess)
+// 	{}
+// };
 
 // HASH MAP OF SHIPS AND THEIR DESIGNATIONS (ABBRV.)
 const unordered_map<char, string> battleship::symbolToShip = {
@@ -60,8 +61,6 @@ battleship::battleship() {
 	placeShips();  // placing p1 ships SHOULD BE hardcoded NOW
 	placeShips();  // placing p2 ships SHOULD BE hardcoded NOW
 }
-
-
 
 
 // clears std::cout when switching turns to prevent seeing opponent's board
@@ -121,6 +120,12 @@ pair<int, int> battleship::parseCoordinatesInput(string input) {
 
 // returns (row, col) coordinates upon successful input from user
 pair <int, int> battleship::getCoordinates() {
+
+	// THIS SHOULD BE SOCKET READ
+	// ONE STRING IN THE FORM (LETTTER+NUMBER)
+	// set to response
+
+
 	string response;
 	cout << "Enter coordinates such as A3: " << endl;
 	
@@ -172,7 +177,7 @@ void battleship::gameStep() {
 		enemyShipStatus = &p1ShipStatus;
 	}
 
-	// socket.Write(turnInfo)
+
 	printTurnInfo(player, enemy, ships, guesses, enemyShipStatus);
 	cout << "\n\n(Choose coordinate to fire at) ";
 	while (true) {
@@ -198,33 +203,36 @@ void battleship::gameStep() {
 // prints the relevant info to player at start of each turn
 void battleship::printTurnInfo(string player, string enemy, board* ships,  board* guesses,
 		unordered_map<string, int>* enemyShipStatus) {
-	string response;
-	// Create obj with the params
-	TurnInfo currentTurn(player, enemy, ships, guesses, enemyShipStatus);
+	// string response;
 
-	// make all non-strings strings (2 boards, 1 hm)
-
-
-	// socket.Write(currentTurn)
-	// json j = {
-	// 	{"player", player},
-	// 	{"enemy", enemy}
-	// };
+	// JSONIFY
+	json s;
+	for(auto it = enemyShipStatus->begin(); it != enemyShipStatus->end(); ++it) {
+		s[it->first] = it->second; 
+	}
+	
+	json turnInfo = {
+		{"player", player},
+		{"enemy", enemy},
+		{"ships", ships->boardToJSON()},
+		{"guesses", guesses->boardToJSON()},
+		{"enemyShipStatus", s}
+	};
+	// socket.Write(turnInfo)
 	
 	
 	
-	
-	cout << player << "'s turn" << endl;
-	cout << "Press enter to see your board and guesses (make sure " << enemy << " can't see now)" << endl;
+	// cout << player << "'s turn" << endl;
+	// cout << "Press enter to see your board and guesses (make sure " << enemy << " can't see now)" << endl;
 
-	getline(cin, response);
-	cout << "Here's the status of your ships so far" << endl;
-	ships->printBoard();
-	cout << "Here's your fires so far" << endl;
-	guesses->printBoard();
-	cout << enemy << " still has their: ";
-	for (auto iter : *enemyShipStatus)
-		cout << iter.first << "\t";
+	// getline(cin, response);
+	// cout << "Here's the status of your ships so far" << endl;
+	// ships->printBoard();
+	// cout << "Here's your fires so far" << endl;
+	// guesses->printBoard();
+	// cout << enemy << " still has their: ";
+	// for (auto iter : *enemyShipStatus)
+	// 	cout << iter.first << "\t";
 }
 
 

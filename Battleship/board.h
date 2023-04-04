@@ -10,6 +10,7 @@ class board {
 		board();
 		void printBoard();
 		void autoPlaceShips();
+		json boardToJSON();
 		// bool placeShip(int y1, int x1, int y2, int x2, int shipSize, char shipSymbol);
 };
 
