@@ -40,6 +40,7 @@ class GameThread : public Thread {
                         {
                             cout << "Player 1's turn" << endl;
                             p1Socket.Read(data);
+
 	                        p1Socket.Write(ByteArray(game.gameStateToJSONString(1)));
                             p1Socket.Read(data);
 
@@ -56,7 +57,7 @@ class GameThread : public Thread {
 
                                 p1Socket.Read(data);
                                 coord = game.parseCoordinatesInput(data.ToString());
-                                game.fireAtCoordinates(coord.first, coord.second, 1);
+                                game.fireAtCoordinates(coord.first, coord.second, 2);
 
                             }
 
@@ -73,6 +74,7 @@ class GameThread : public Thread {
                         {
                             cout << "Player 2's turn" << endl;
                             p2Socket.Read(data);
+
                             p2Socket.Write(ByteArray(game.gameStateToJSONString(2)));
                             p2Socket.Read(data);
 

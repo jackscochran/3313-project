@@ -92,10 +92,13 @@ def main():
             print("Waiting for opponent to make a move...")
 
 
-    except Exception as e:
-        # print(f"An error occurred: {e}")
+    except Exception as e:        
         print("Server closed")
 
+    except KeyboardInterrupt:
+        print("You quit the game")
+        client_socket.send("quit".encode())
+        
     finally:
         # Close the socket connection
         client_socket.close()
@@ -120,7 +123,7 @@ def getMove(guesses):
         print("Invalid move, column must be between A and H")
         return getMove(guesses)
     
-    if(move[1] < '1' not in rows):
+    if(move[1] not in rows):
         print("Invalid move, row must be between 0 and 9")
         return getMove(guesses)
 

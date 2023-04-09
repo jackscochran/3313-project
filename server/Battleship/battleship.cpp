@@ -151,11 +151,11 @@ string battleship::fireAtCoordinates(int y, int x, int player) {
 
 	if (player == 1){
 		guesses = &p1Guesses;
-		enemyShips = &p1Ships;
+		enemyShips = &p2Ships;
 		enemyShipStatus = &p2ShipStatus;
 	} else{
 		guesses = &p2Guesses;
-		enemyShips = &p2Ships;
+		enemyShips = &p1Ships;
 		enemyShipStatus = &p1ShipStatus;
 	}
 
