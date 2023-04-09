@@ -1,5 +1,6 @@
 #include "thread.h"
 #include "socketserver.h"
+#include "./Battleship/battleship.h"
 #include <stdlib.h>
 #include <time.h>
 #include <list>
@@ -13,40 +14,101 @@ class GameThread : public Thread {
     Socket& p1Socket;
     Socket& p2Socket;
     ByteArray data;
-    Game game;
 
     public:
         GameThread(Socket& p1Socket, Socket& p2Socket) : p1Socket(p1Socket), p2Socket(p2Socket)
         {
             std::cout << "Game Thread Created" << std::endl;
-            game = new Game()
+            // game = new Game()
         } 
 
         long ThreadMain()
         {
             try
-            {
+            {   
+                battleship game;
 
-                game.Start() // start game
-                p1Socket.Write(ByteArray(message)); // message is board and player status
-                p2Socket.Write(ByteArray(message));
+                p1Socket.Write(ByteArray("player1")); // message is board and player status
+                p2Socket.Write(ByteArray("player2"));           
 
-                while(!game.isGameOver)
+                while(true)
                 {
+                    while (!game.isGameOver){
+                        // game.gameStep(p1Socket, p2Socket);
 
-                    game.gameStep();
-                    // p1Socket.Read(data);
+                        if(game.isP1Turn)
+                        {
+                            cout << "Player 1's turn" << endl;
+                            p1Socket.Read(data);
+	                        p1Socket.Write(ByteArray(game.gameStateToJSONString(1)));
+                            p1Socket.Read(data);
 
-                    // std::string res = data.ToString();
+                            if(data.ToString() == "quit"){
+                                cout << "Player 1 quit" << endl;
+                                game.isGameOver = true;
+                                break;
+                            }
 
-                    // if(res=="done")
-                    // {
-                    //     break;
-                    // }
+                            pair<int, int> coord = game.parseCoordinatesInput(data.ToString());
+                            string result = game.fireAtCoordinates(coord.first, coord.second, 1);
+                            while(result == "invalid"){
+                                p1Socket.Write(ByteArray(result));
 
-                    // socket.Write(ByteArray(res));
+                                p1Socket.Read(data);
+                                coord = game.parseCoordinatesInput(data.ToString());
+                                game.fireAtCoordinates(coord.first, coord.second, 1);
 
+                            }
+
+                            if(result == "end"){
+                                game.isGameOver = true;
+                                p1Socket.Write(ByteArray("win"));
+                                p2Socket.Write(ByteArray("lose"));
+                                break;
+                            }
+                            p1Socket.Write(ByteArray(result));
+                            game.isP1Turn = false;
+                        }
+                        else
+                        {
+                            cout << "Player 2's turn" << endl;
+                            p2Socket.Read(data);
+                            p2Socket.Write(ByteArray(game.gameStateToJSONString(2)));
+                            p2Socket.Read(data);
+
+                            if(data.ToString() == "quit"){
+                                cout << "Player 2 quit" << endl;
+                                game.isGameOver = true;
+                                break;
+                            }
+
+                            pair<int, int> coord = game.parseCoordinatesInput(data.ToString());
+                            string result = game.fireAtCoordinates(coord.first, coord.second, 2);
+                            while(result == "invalid"){
+                                p2Socket.Write(ByteArray(result));
+
+                                p2Socket.Read(data);
+                                coord = game.parseCoordinatesInput(data.ToString());
+                                game.fireAtCoordinates(coord.first, coord.second, 2);
+
+                            }
+
+                            if(result == "end"){
+                                game.isGameOver = true;
+                                p2Socket.Write(ByteArray("win"));
+                                p1Socket.Write(ByteArray("lose"));
+                                break;
+                            }
+                            p2Socket.Write(ByteArray(result));
+                            game.isP1Turn = true;
+                        }
+                    }
+                    cout << "Game Over" << endl;
+                    p1Socket.Write(ByteArray("closed"));
+                    p2Socket.Write(ByteArray("closed"));
+                    break;
                 }
+
             }
             catch(TerminationException terminationException)
             {
@@ -80,13 +142,18 @@ class ServerThread : public Thread{
             {
                 while(1)
                 {
+                    // wait for p1 to connect
+
                     Socket* p1Connection = new Socket(server.Accept());
-                    Socket& p1SocketRef = *connection;
+                    Socket& p1SocketRef = *p1Connection;
+                    cout << "Player 1 connected" << endl;
 
                     // send message to p1 to wait for p2
+                    p1SocketRef.Write(ByteArray("waiting"));
 
                     Socket* p2Connection = new Socket(server.Accept());
-                    Socket& p2SocketRef = *connection;
+                    Socket& p2SocketRef = *p2Connection;
+                    cout << "Player 2 connected" << endl;
 
                     new GameThread(p1SocketRef, p2SocketRef);
                 }

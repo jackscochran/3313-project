@@ -6,8 +6,10 @@
 #include <unordered_map>
 #include <utility>  // for std::pair
 #include "board.h"
+#include "../socketserver.h"
 
 using namespace std;
+using namespace Sync;
 
 
 class battleship {
@@ -32,17 +34,18 @@ class battleship {
 		battleship();
 		static void flushCout(int numLines = 50);
 		static pair<int, int> parseCoordinatesInput(string input);
-		static pair<int, int> getCoordinates();
+		static pair<int, int> getCoordinates(Socket& player);
 		// static tuple<pair <int, int>, pair <int, int>> getCoordinates(int size);
 		// static string getRandomCoordinates();
 		// static string getRandomCoordinates(pair<int, int> coord, int size);
 		// void getPlayerNames();
 		void placeShips();
-		void gameStep();
-		void printTurnInfo(string player, string enemy, board* ships,  board* guesses,
-				unordered_map<string, int>* enemyShipStatus);
-		bool fireAtCoordinates(int y, int x, string player, string enemy, board* guesses,
-				board* enemyShips, unordered_map<string, int>* enemyShipStatus);
+		void gameStep(
+				Socket& p1Socket,
+    			Socket& p2Socket
+		);
+		string gameStateToJSONString(int player);
+		string fireAtCoordinates(int y, int x, int player);
 };
 
 
