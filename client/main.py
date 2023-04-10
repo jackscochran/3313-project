@@ -1,8 +1,9 @@
 import socket
+import json
 
 def main():
-    server_ip = '127.0.0.1'  # Replace with the server IP you want to connect to
-    server_port = 8080  # Replace with the server port you want to connect to
+    server_ip = '10.0.2.15'  # Replace with the server IP you want to connect to
+    server_port = 2000  # Replace with the server port you want to connect to
 
     message = "Hello, Server!"
 
@@ -36,68 +37,120 @@ def main():
 
         # start game loop
         while(True):
-            gameState = client_socket.recv(1024).decode()
+            client_socket.send("ready".encode())
+            gamestate = client_socket.recv(1024).decode()
 
-            if(gameState == "closed"):
-                print("Server closed")
+            if(gamestate == "closed"):
+                print("Game over, draw game")
                 return
 
+            if(gamestate == "lose"):
+                print("You lost!")
+                return
+
+            gamestate = json.loads(gamestate)
+
             print("\n----------------------------------")
-            print("Your board:")
-            displayBoard(gameState["playerBoard"])
+            print("Here's the status of your board so far:")
+            displayBoard(gamestate["ships"])
+            print("\nHere's your shots so far:")
+            displayBoard(gamestate["guesses"])
 
-            print("\nOpponent's board:")
-            displayBoard(gameState["opponentBoard"])
+            displayEnemyStatus(gamestate["enemyShipStatus"])
 
-            move = getMove()
+            print('\nEnter "QUIT" to exit the game.')
 
-            if(move == "quit"):
-                client_socket.sendall(move.encode())
+            move = getMove(gamestate["guesses"])
+            print("You guessed: " + move)
+
+            if(move == "QUIT"):
+                client_socket.sendall("quit".encode())
                 print("You quit the game")
                 return
 
             client_socket.sendall(move.encode())
+            result = client_socket.recv(1024).decode()
+            while(result == "invalid"):
+                print("Invalid move")
+                move = getMove(gamestate["guesses"])
+                client_socket.sendall(move.encode())
+                result = client_socket.recv(1024).decode()
+
+            if(result == "hit"):
+                print("You hit a ship!")
+            elif(result == "miss"):
+                print("You missed!")
+            elif(result == "sunk"):
+                print("You sunk a ship!")
+            elif(result == "win"):
+                print("You won!")
+                return
+            elif(result == "lose"):
+                print("You lost!")
+                return
+
+            print("Waiting for opponent to make a move...")
 
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    except Exception as e:        
+        print("Server closed")
 
+    except KeyboardInterrupt:
+        print("You quit the game")
+        client_socket.send("quit".encode())
+        
     finally:
         # Close the socket connection
         client_socket.close()
         print("Socket closed")
 
-def getMove():
+def getMove(guesses):
     # get input coordinates from user
-    move = input("Enter your move (ex. B4): ")
+    move = input("Enter your move (ex. B4): ").upper()
 
     # validate input
-    if(move.length != 2):
+    columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+    rows = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+    if(move == "QUIT"):
+        return move
+
+    if(len(move) != 2):
         print("Invalid move")
-        return getMove()
+        return getMove(guesses)
     
-    if(move[0] < 'A' or move[0] > 'H'):
+    if(move[0] not in columns):
         print("Invalid move, column must be between A and H")
-        return getMove()
+        return getMove(guesses)
     
-    if(move[1] < '1' or move[1] > '10'):
-        print("Invalid move, row must be between 1 and 10")
-        return getMove()
+    if(move[1] not in rows):
+        print("Invalid move, row must be between 0 and 9")
+        return getMove(guesses)
+
+    # check if move has already been made
+    print(guesses[rows.index(move[1])][columns.index(move[0])])
+    if(guesses[rows.index(move[1])][columns.index(move[0])] != 45):
+        print("Invalid move, you have already guessed this location")
+        return getMove(guesses)
 
     return move
 
-def displayBoard(gameState):
-    # display 2-d array on console with row and column labels
+def displayBoard(board):
+    boardSize = 10
 
-    # print column labels
-    print("  A B C D E F G H")
-
-    # print row labels and board
-    for i in range(10):
-        print(i+1, end=" ")
-        for j in range(8):
-            print(gameState[i][j], end=" ")
+    print("\n  A B C D E F G H I J")  # column names
+    for i in range(boardSize):
+        print(i, end=" ")  # row name
+        for j in range(boardSize):
+            print(chr(board[i][j]), end=" ")
         print()
+    print()
+
+
+def displayEnemyStatus(status):
+    print("Opponents current status:")
+    for ship in status.keys():
+        print(f"  {ship}: {status[ship]}")
 
 if __name__ == "__main__":
     main()
